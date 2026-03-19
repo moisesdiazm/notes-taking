@@ -4,9 +4,51 @@ A full-stack notes app. Next.js frontend with in-memory state (ready to wire up)
 
 ```
 notes-taking/
-├── frontend/   # Next.js 14 App Router (TypeScript + Tailwind)
-└── backend/    # Django 5 + DRF + SimpleJWT
+├── frontend/           # Next.js 14 App Router (TypeScript + Tailwind)
+├── backend/            # Django 5 + DRF + SimpleJWT
+└── docker-compose.yml  # Local development
 ```
+
+---
+
+## Docker (local dev)
+
+**Prerequisites:** Docker and Docker Compose.
+
+```bash
+# Start both services with hot-reload
+docker compose up --build
+
+# Frontend → http://localhost:3000
+# Backend  → http://localhost:8000
+```
+
+On first run, run migrations and seed the database (wait for containers to be healthy):
+
+```bash
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py seed
+```
+
+This creates `demo@example.com` / `demo1234` and sample notes.
+
+Postgres data is stored in the `pgdata` named volume and persists across restarts. To reset it:
+
+```bash
+docker compose down -v   # removes containers and the pgdata volume
+```
+
+**Common commands:**
+
+```bash
+docker compose up            # start (no rebuild)
+docker compose up --build    # rebuild images and start
+docker compose down          # stop and remove containers
+docker compose logs -f       # follow logs from all services
+docker compose logs -f backend  # follow backend logs only
+```
+
+Both services mount the local source directory, so code changes reload automatically — no rebuild needed during development.
 
 ---
 
