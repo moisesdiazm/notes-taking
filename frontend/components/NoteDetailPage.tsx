@@ -89,7 +89,7 @@ export default function NoteDetailPage({ id }: Props) {
 
   return (
     <div
-      className="min-h-screen w-full bg-cream"
+      className="h-screen w-full bg-cream flex flex-col overflow-hidden"
       onClick={() => dropdownOpen && setDropdownOpen(false)}
     >
       {/* Top bar */}
@@ -104,7 +104,7 @@ export default function NoteDetailPage({ id }: Props) {
       </div>
 
       {/* Content area */}
-      <div className="px-[37px] pt-3 pb-[37px] flex flex-col gap-2 min-h-[calc(100vh-35px)]">
+      <div className="px-[37px] pt-3 pb-[37px] flex flex-col gap-2 flex-1 overflow-hidden">
         {/* Category dropdown */}
         <div
           className="relative self-start"
@@ -154,7 +154,7 @@ export default function NoteDetailPage({ id }: Props) {
 
         {/* Note card */}
         <div
-          className="flex-1 rounded-[11px] flex flex-col gap-6 min-h-[700px] transition-colors duration-[250ms] pt-[39px] px-16 pb-16"
+          className="flex-1 rounded-[11px] flex flex-col gap-6 overflow-y-auto transition-colors duration-[250ms] pt-[39px] px-16 pb-16"
           style={{
             backgroundColor: cardBg,
             border: `3px solid ${activeCat.color}`,
@@ -182,7 +182,7 @@ export default function NoteDetailPage({ id }: Props) {
             onChange={(e) => handleContentChange(e.target.value)}
             placeholder="Start writing..."
             rows={1}
-            className="m-0 p-0 flex-1 w-full bg-transparent border-none outline-none resize-none overflow-hidden font-sans text-[15px] text-[#1a1007] leading-[1.65] min-h-[200px]"
+            className="m-0 p-0 flex-1 w-full bg-transparent border-none outline-none resize-none font-sans text-[15px] text-[#1a1007] leading-[1.65] min-h-[200px]"
           />
         </div>
       </div>

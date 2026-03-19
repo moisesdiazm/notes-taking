@@ -6,6 +6,8 @@ import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { getNotes, createNote, getAccessToken } from '@/lib/api'
 import type { Note } from '@/lib/types'
+import Image from 'next/image'
+import coffeeImage from '@/app/img/coffee.png'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -61,9 +63,8 @@ export default function DashboardPage() {
         <aside className="w-64 flex-shrink-0 flex flex-col">
           <button
             onClick={() => setActiveCategory(null)}
-            className={`flex items-center h-8 px-4 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${
-              activeCategory === null ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
-            }`}
+            className={`flex items-center h-8 px-4 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${activeCategory === null ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
+              }`}
           >
             All Categories
           </button>
@@ -74,9 +75,8 @@ export default function DashboardPage() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(isActive ? null : cat.id)}
-                className={`flex items-center h-8 px-4 gap-2 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${
-                  isActive ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
-                }`}
+                className={`flex items-center h-8 px-4 gap-2 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${isActive ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
+                  }`}
               >
                 <span
                   className="w-[11px] h-[11px] rounded-full flex-shrink-0"
@@ -139,17 +139,16 @@ export default function DashboardPage() {
 
 function EmptyState() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-16">
+    <div className="flex-1 flex flex-col items-center justify-center h-[100%] align-center gap-6 pb-16">
       <div className="flex gap-2 -rotate-3 opacity-40">
-        {(['#EF9C66', '#FCDCA0', '#78ABA8'] as const).map((color, i) => (
-          <div
-            key={i}
-            className="w-16 h-20 rounded-lg"
-            style={{ border: `2px solid ${color}`, backgroundColor: color + '60' }}
-          />
-        ))}
+        <Image
+          src={coffeeImage}
+          alt="coffee"
+          className="object-contain"
+          style={{ width: '300px' }}
+        />
       </div>
-      <p className="font-serif italic text-lg text-title-brown text-center max-w-xs m-0">
+      <p className="font-serif italic text-xl text-title-brown text-center m-0">
         I&apos;m just here waiting for your charming notes...
       </p>
     </div>
