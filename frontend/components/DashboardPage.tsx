@@ -83,7 +83,7 @@ export default function DashboardPage() {
                   style={{ backgroundColor: cat.color }}
                 />
                 <span className="flex-1">{cat.name}</span>
-                <span className="font-sans text-xs text-[#3a2a0a] opacity-60">
+                <span className="font-sans text-xs text-[#3a2a0a] opacity-60 min-w-[16px] text-right tabular-nums">
                   {countByCategory(cat.id)}
                 </span>
               </button>
