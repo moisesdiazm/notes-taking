@@ -1,15 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useNotes } from '@/lib/store'
 import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
+import { getNotes, createNote, getAccessToken } from '@/lib/api'
+import type { Note } from '@/lib/types'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { notes, addNote } = useNotes()
+  const [notes, setNotes] = useState<Note[]>([])
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      router.replace('/')
+      return
+    }
+    getNotes().then(setNotes).catch(() => router.replace('/')).finally(() => setLoading(false))
+  }, [router])
 
   const filtered = activeCategory
     ? notes.filter((n) => n.category === activeCategory)
@@ -17,13 +27,17 @@ export default function DashboardPage() {
 
   const countByCategory = (id: CategoryId) => notes.filter((n) => n.category === id).length
 
-  function handleNewNote() {
-    const note = addNote({
-      title: 'Untitled',
-      content: '',
-      category: activeCategory ?? 'random-thoughts',
-    })
-    router.push(`/notes/${note.id}`)
+  async function handleNewNote() {
+    try {
+      const note = await createNote({
+        title: 'Untitled',
+        content: '',
+        category: activeCategory ?? 'random-thoughts',
+      })
+      router.push(`/notes/${note.id}`)
+    } catch {
+      // ignore — stay on dashboard
+    }
   }
 
   return (
@@ -79,7 +93,7 @@ export default function DashboardPage() {
 
         {/* Notes grid */}
         <main className="flex-1">
-          {filtered.length === 0 ? (
+          {loading ? null : filtered.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="flex flex-wrap gap-x-[13px] gap-y-4 content-start">

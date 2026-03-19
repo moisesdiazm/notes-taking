@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useNotes } from '@/lib/store'
 import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
 import { formatLastEdited } from '@/lib/utils'
+import { getNote, patchNote, getAccessToken } from '@/lib/api'
+import type { Note } from '@/lib/types'
 
 interface Props {
   id: string
@@ -19,22 +20,33 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function NoteDetailPage({ id }: Props) {
   const router = useRouter()
-  const { getNoteById, updateNote } = useNotes()
-  const note = getNoteById(id)
+  const [note, setNote] = useState<Note | null>(null)
 
-  const [title, setTitle] = useState(note?.title ?? '')
-  const [content, setContent] = useState(note?.content ?? '')
-  const [category, setCategory] = useState<CategoryId>(note?.category ?? 'random-thoughts')
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [category, setCategory] = useState<CategoryId>('random-thoughts')
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState(note?.updatedAt ?? new Date().toISOString())
+  const [lastUpdated, setLastUpdated] = useState(new Date().toISOString())
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (!note) router.replace('/dashboard')
-  }, [note, router])
+    if (!getAccessToken()) {
+      router.replace('/')
+      return
+    }
+    getNote(id)
+      .then((n) => {
+        setNote(n)
+        setTitle(n.title)
+        setContent(n.content)
+        setCategory(n.category)
+        setLastUpdated(n.updatedAt)
+      })
+      .catch(() => router.replace('/dashboard'))
+  }, [id, router])
 
   const autoResize = useCallback((el: HTMLTextAreaElement | null) => {
     if (!el) return
@@ -48,8 +60,7 @@ export default function NoteDetailPage({ id }: Props) {
   function scheduleSave(patch: Partial<{ title: string; content: string; category: CategoryId }>) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
-      updateNote(id, patch)
-      setLastUpdated(new Date().toISOString())
+      patchNote(id, patch).then((updated) => setLastUpdated(updated.updatedAt)).catch(() => {})
     }, 400)
   }
 
@@ -66,8 +77,9 @@ export default function NoteDetailPage({ id }: Props) {
   function handleCategoryChange(cat: CategoryId) {
     setCategory(cat)
     setDropdownOpen(false)
-    updateNote(id, { title, content, category: cat })
-    setLastUpdated(new Date().toISOString())
+    patchNote(id, { title, content, category: cat })
+      .then((updated) => setLastUpdated(updated.updatedAt))
+      .catch(() => {})
   }
 
   if (!note) return null

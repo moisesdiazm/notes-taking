@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import catImg from '@/app/img/cat.png'
 import plantImg from '@/app/img/plant.png'
+import { login, setTokens, getAccessToken } from '@/lib/api'
 
 type LoginVariant = 'new-friend' | 'returning'
 
@@ -18,15 +19,31 @@ export default function LoginPage() {
 
   useEffect(() => {
     setVariant(pickVariant())
-  }, [])
+    if (getAccessToken()) {
+      router.replace('/dashboard')
+    }
+  }, [router])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const isNewFriend = variant === 'new-friend'
 
-  function handleSignIn(e: React.FormEvent) {
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
-    router.push('/dashboard')
+    setError(null)
+    setLoading(true)
+    try {
+      const tokens = await login(email, password)
+      setTokens(tokens.access, tokens.refresh)
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function toggleVariant() {
@@ -58,11 +75,15 @@ export default function LoginPage() {
               placeholder="Password"
               className="w-full h-[39px] px-[14px] border border-accent-purple rounded-md bg-transparent font-sans text-sm text-[#3a2a0a] outline-none focus:shadow-[0_0_0_2px_#9747FF44]"
             />
+            {error && (
+              <p className="m-0 font-sans text-xs text-red-600">{error}</p>
+            )}
             <button
               type="submit"
-              className="w-full h-[43px] mt-2 border border-accent-brown rounded-full bg-transparent font-sans text-sm font-medium text-accent-brown cursor-pointer transition-opacity hover:opacity-70"
+              disabled={loading}
+              className="w-full h-[43px] mt-2 border border-accent-brown rounded-full bg-transparent font-sans text-sm font-medium text-accent-brown cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
             >
-              Sign In
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
@@ -79,7 +100,6 @@ export default function LoginPage() {
 }
 
 function CharacterBadge({ isNewFriend }: { isNewFriend: boolean }) {
-  const accent = isNewFriend ? '#EF9C66' : '#78ABA8'
   return (
     <div
       className="flex flex-col justify-center gap-2"
