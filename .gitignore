@@ -35,3 +35,5 @@ backend/staticfiles/
 .env
 .env.local
 .env.production
+.coverage
+.python-version
