@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useNotes } from '@/lib/store'
 import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
@@ -8,6 +8,13 @@ import { formatLastEdited } from '@/lib/utils'
 
 interface Props {
   id: string
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 export default function NoteDetailPage({ id }: Props) {
@@ -22,12 +29,21 @@ export default function NoteDetailPage({ id }: Props) {
   const [lastUpdated, setLastUpdated] = useState(note?.updatedAt ?? new Date().toISOString())
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
+  const contentRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (!note) {
-      router.replace('/dashboard')
-    }
+    if (!note) router.replace('/dashboard')
   }, [note, router])
+
+  const autoResize = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }, [])
+
+  useEffect(() => { autoResize(titleRef.current) }, [title, autoResize])
+  useEffect(() => { autoResize(contentRef.current) }, [content, autoResize])
 
   function scheduleSave(patch: Partial<{ title: string; content: string; category: CategoryId }>) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
@@ -57,92 +73,64 @@ export default function NoteDetailPage({ id }: Props) {
   if (!note) return null
 
   const activeCat = getCategoryById(category)
+  const cardBg = hexToRgba(activeCat.color, 0.5)
 
   return (
     <div
-      className="min-h-screen w-full"
-      style={{ backgroundColor: '#F9F1E3' }}
+      className="min-h-screen w-full bg-cream"
       onClick={() => dropdownOpen && setDropdownOpen(false)}
     >
       {/* Top bar */}
-      <div
-        className="h-[35px] flex items-center px-6 border-b"
-        style={{ borderColor: 'rgba(0,0,0,0.1)' }}
-      >
-        {/* Back button */}
+      <div className="h-[35px] flex items-center px-6 border-b border-black/10 flex-shrink-0">
         <button
           onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-1 text-sm transition-opacity hover:opacity-70"
-          style={{ color: '#886428', fontFamily: 'var(--font-inter), sans-serif' }}
+          className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-title-brown font-sans text-sm p-0 transition-opacity hover:opacity-70"
         >
           <span className="text-lg leading-none">←</span>
           <span>Back</span>
         </button>
-
-        <div className="flex-1" />
-
-        {/* Last edited */}
-        <span
-          className="text-xs"
-          style={{ color: '#886428', fontFamily: 'var(--font-inter), sans-serif' }}
-        >
-          Last edited: {formatLastEdited(lastUpdated)}
-        </span>
       </div>
 
-      {/* Note area */}
-      <div className="max-w-3xl mx-auto px-8 pt-10 pb-16 flex flex-col gap-6 relative">
+      {/* Content area */}
+      <div className="px-[37px] pt-3 pb-[37px] flex flex-col gap-2 min-h-[calc(100vh-35px)]">
         {/* Category dropdown */}
-        <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative self-start"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors hover:bg-black/5"
-            style={{
-              borderColor: '#9747FF',
-              fontFamily: 'var(--font-inter), sans-serif',
-              color: '#3a2a0a',
-            }}
+            className="flex items-center gap-2 px-[10px] py-[5px] rounded-md bg-transparent cursor-pointer font-sans text-[13px] text-[#3a2a0a] transition-colors hover:bg-black/[0.04]"
+            style={{ border: '1.5px solid #9747FF' }}
           >
             <span
-              className="w-[11px] h-[11px] rounded-full flex-shrink-0"
+              className="w-[11px] h-[11px] rounded-full flex-shrink-0 inline-block"
               style={{ backgroundColor: activeCat.color }}
             />
             <span>{activeCat.name}</span>
             <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
+              width="12" height="12" viewBox="0 0 12 12" fill="none"
               className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
             >
-              <path
-                d="M2 4L6 8L10 4"
-                stroke="#9747FF"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M2 4L6 8L10 4" stroke="#9747FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
           {dropdownOpen && (
             <div
-              className="absolute top-full mt-1 left-0 rounded-md border shadow-md z-10 overflow-hidden"
-              style={{ borderColor: '#9747FF', backgroundColor: '#F9F1E3', minWidth: 180 }}
+              className="absolute top-full mt-1 left-0 rounded-md bg-cream shadow-md z-20 overflow-hidden min-w-[180px]"
+              style={{ border: '1.5px solid #9747FF' }}
             >
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors hover:bg-black/5"
-                  style={{
-                    fontFamily: 'var(--font-inter), sans-serif',
-                    color: '#3a2a0a',
-                    fontWeight: cat.id === category ? 600 : 400,
-                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 bg-transparent border-none cursor-pointer font-sans text-[13px] text-[#3a2a0a] text-left transition-colors hover:bg-black/5 ${
+                    cat.id === category ? 'font-semibold' : 'font-normal'
+                  }`}
                 >
                   <span
-                    className="w-[11px] h-[11px] rounded-full flex-shrink-0"
+                    className="w-[11px] h-[11px] rounded-full flex-shrink-0 inline-block"
                     style={{ backgroundColor: cat.color }}
                   />
                   {cat.name}
@@ -152,37 +140,39 @@ export default function NoteDetailPage({ id }: Props) {
           )}
         </div>
 
-        {/* Title */}
-        <textarea
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Note title..."
-          rows={2}
-          className="w-full bg-transparent border-none outline-none resize-none leading-tight"
+        {/* Note card */}
+        <div
+          className="flex-1 rounded-[11px] flex flex-col gap-6 min-h-[700px] transition-colors duration-[250ms] pt-[39px] px-16 pb-16"
           style={{
-            fontFamily: 'var(--font-inria-serif), serif',
-            fontWeight: 700,
-            fontSize: 32,
-            color: '#000',
+            backgroundColor: cardBg,
+            border: `3px solid ${activeCat.color}`,
+            boxShadow: '1px 1px 2px rgba(0,0,0,0.25)',
           }}
-        />
+        >
+          <p className="m-0 font-sans text-xs text-black/45 leading-[1.4] select-none">
+            Last Edited: {formatLastEdited(lastUpdated)}
+          </p>
 
-        {/* Divider */}
-        <div className="h-px" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} />
+          <textarea
+            ref={titleRef}
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Note title..."
+            rows={1}
+            className="m-0 p-0 w-full bg-transparent border-none outline-none resize-none overflow-hidden font-serif font-bold text-[34px] leading-[1.25] text-[#1a1007]"
+          />
 
-        {/* Content */}
-        <textarea
-          value={content}
-          onChange={(e) => handleContentChange(e.target.value)}
-          placeholder="Start writing..."
-          className="w-full bg-transparent border-none outline-none resize-none min-h-[400px]"
-          style={{
-            fontFamily: 'var(--font-inter), sans-serif',
-            fontSize: 14,
-            color: '#000',
-            lineHeight: 1.6,
-          }}
-        />
+          <div className="h-px bg-black/10" />
+
+          <textarea
+            ref={contentRef}
+            value={content}
+            onChange={(e) => handleContentChange(e.target.value)}
+            placeholder="Start writing..."
+            rows={1}
+            className="m-0 p-0 flex-1 w-full bg-transparent border-none outline-none resize-none overflow-hidden font-sans text-[15px] text-[#1a1007] leading-[1.65] min-h-[200px]"
+          />
+        </div>
       </div>
     </div>
   )

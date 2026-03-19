@@ -27,150 +27,98 @@ export default function DashboardPage() {
   }
 
   return (
-    <div
-      className="min-h-screen w-full flex"
-      style={{ backgroundColor: '#F9F1E3' }}
-    >
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col pt-[101px]">
-        {/* All Categories */}
+    <div className="min-h-screen bg-cream flex flex-col pl-[23px] pr-[34px]">
+      {/* Top bar */}
+      <div className="h-[101px] flex items-center justify-end">
         <button
-          onClick={() => setActiveCategory(null)}
-          className="flex items-center h-8 px-4 text-sm text-left w-full transition-colors hover:bg-black/5"
-          style={{
-            fontFamily: 'var(--font-inter), sans-serif',
-            fontWeight: activeCategory === null ? 600 : 400,
-            color: '#3a2a0a',
-            backgroundColor: activeCategory === null ? 'rgba(0,0,0,0.06)' : 'transparent',
-          }}
+          onClick={handleNewNote}
+          className="h-[43px] px-4 rounded-full border border-accent-brown bg-transparent text-accent-brown font-sans text-sm font-medium flex items-center gap-[6px] cursor-pointer transition-opacity hover:opacity-70"
         >
-          All Categories
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 1V13M1 7H13" stroke="#956E39" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          New Note
         </button>
+      </div>
 
-        {CATEGORIES.map((cat) => (
+      {/* Content row */}
+      <div className="flex-1 flex gap-8">
+        {/* Sidebar */}
+        <aside className="w-64 flex-shrink-0 flex flex-col">
           <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-            className="flex items-center h-8 px-4 gap-2 text-sm text-left w-full transition-colors hover:bg-black/5"
-            style={{
-              fontFamily: 'var(--font-inter), sans-serif',
-              fontWeight: activeCategory === cat.id ? 600 : 400,
-              color: '#3a2a0a',
-              backgroundColor:
-                activeCategory === cat.id ? 'rgba(0,0,0,0.06)' : 'transparent',
-            }}
+            onClick={() => setActiveCategory(null)}
+            className={`flex items-center h-8 px-4 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${
+              activeCategory === null ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
+            }`}
           >
-            <span
-              className="w-[11px] h-[11px] rounded-full flex-shrink-0"
-              style={{ backgroundColor: cat.color }}
-            />
-            <span className="flex-1">{cat.name}</span>
-            <span className="text-xs opacity-60">{countByCategory(cat.id)}</span>
+            All Categories
           </button>
-        ))}
-      </aside>
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col pt-[39px] pr-8 pb-8">
-        {/* Top bar */}
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={handleNewNote}
-            className="flex items-center gap-1.5 h-[43px] px-4 rounded-full border text-sm font-medium transition-opacity hover:opacity-80"
-            style={{
-              borderColor: '#956E39',
-              color: '#956E39',
-              fontFamily: 'var(--font-inter), sans-serif',
-              backgroundColor: 'transparent',
-            }}
-          >
-            <span className="text-lg leading-none">+</span>
-            New Note
-          </button>
-        </div>
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat.id
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(isActive ? null : cat.id)}
+                className={`flex items-center h-8 px-4 gap-2 font-sans text-sm text-[#3a2a0a] border-none rounded cursor-pointer text-left transition-colors hover:bg-black/5 ${
+                  isActive ? 'font-semibold bg-black/[0.06]' : 'font-normal bg-transparent'
+                }`}
+              >
+                <span
+                  className="w-[11px] h-[11px] rounded-full flex-shrink-0"
+                  style={{ backgroundColor: cat.color }}
+                />
+                <span className="flex-1">{cat.name}</span>
+                <span className="font-sans text-xs text-[#3a2a0a] opacity-60">
+                  {countByCategory(cat.id)}
+                </span>
+              </button>
+            )
+          })}
+        </aside>
 
-        {/* Notes grid or empty state */}
-        {filtered.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div
-            className="flex flex-wrap gap-[13px]"
-            style={{ alignContent: 'flex-start' }}
-          >
-            {filtered.map((note) => {
-              const cat = getCategoryById(note.category)
-              return (
-                <button
-                  key={note.id}
-                  onClick={() => router.push(`/notes/${note.id}`)}
-                  className="text-left"
-                  style={{
-                    width: 303,
-                    height: 246,
-                    borderRadius: 11,
-                    padding: 16,
-                    backgroundColor: cat.color + '80',
-                    border: `3px solid ${cat.color}`,
-                    boxShadow: '1px 1px 2px rgba(0,0,0,0.25)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    flexShrink: 0,
-                  }}
-                >
-                  {/* Meta row */}
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-xs"
-                      style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#3a2a0a' }}
-                    >
-                      {formatDate(note.updatedAt)}
-                    </span>
-                    <span
-                      className="text-xs opacity-60"
-                      style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#3a2a0a' }}
-                    >
-                      {cat.name}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h2
+        {/* Notes grid */}
+        <main className="flex-1">
+          {filtered.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="flex flex-wrap gap-x-[13px] gap-y-4 content-start">
+              {filtered.map((note) => {
+                const cat = getCategoryById(note.category)
+                return (
+                  <button
+                    key={note.id}
+                    onClick={() => router.push(`/notes/${note.id}`)}
+                    className="w-[303px] h-[246px] rounded-[11px] p-4 flex flex-col gap-3 flex-shrink-0 cursor-pointer text-left"
                     style={{
-                      fontFamily: 'var(--font-inria-serif), serif',
-                      fontWeight: 700,
-                      fontSize: 24,
-                      color: '#000',
-                      lineHeight: 1.2,
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
+                      backgroundColor: cat.color + '80',
+                      border: `3px solid ${cat.color}`,
+                      boxShadow: '1px 1px 2px rgba(0,0,0,0.25)',
                     }}
                   >
-                    {note.title}
-                  </h2>
+                    <div className="flex items-center gap-2">
+                      <span className="font-sans text-xs text-[#3a2a0a]">
+                        {formatDate(note.updatedAt)}
+                      </span>
+                      <span className="font-sans text-xs text-[#3a2a0a] opacity-60">
+                        {cat.name}
+                      </span>
+                    </div>
 
-                  {/* Content */}
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-inter), sans-serif',
-                      fontSize: 12,
-                      color: '#000',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 5,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {note.content}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </main>
+                    <h2 className="font-serif font-bold text-2xl leading-tight text-black m-0 line-clamp-2">
+                      {note.title}
+                    </h2>
+
+                    <p className="font-sans text-xs leading-[1.5] text-black m-0 flex-1 line-clamp-5">
+                      {note.content}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   )
 }
@@ -178,25 +126,16 @@ export default function DashboardPage() {
 function EmptyState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-16">
-      {/* Simple decorative illustration */}
       <div className="flex gap-2 -rotate-3 opacity-40">
-        {['#EF9C66', '#FCDCA0', '#78ABA8'].map((color, i) => (
+        {(['#EF9C66', '#FCDCA0', '#78ABA8'] as const).map((color, i) => (
           <div
             key={i}
-            className="w-16 h-20 rounded-lg border-2"
-            style={{ backgroundColor: color + '60', borderColor: color }}
+            className="w-16 h-20 rounded-lg"
+            style={{ border: `2px solid ${color}`, backgroundColor: color + '60' }}
           />
         ))}
       </div>
-      <p
-        className="text-center max-w-xs"
-        style={{
-          fontFamily: 'var(--font-inria-serif), serif',
-          fontStyle: 'italic',
-          fontSize: 18,
-          color: '#886428',
-        }}
-      >
+      <p className="font-serif italic text-lg text-title-brown text-center max-w-xs m-0">
         I&apos;m just here waiting for your charming notes...
       </p>
     </div>
