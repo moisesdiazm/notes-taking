@@ -108,46 +108,36 @@ export default function NoteDetailPage({ id }: Props) {
       className="h-screen w-full bg-cream flex flex-col overflow-hidden"
       onClick={() => dropdownOpen && setDropdownOpen(false)}
     >
-      {/* Top bar */}
-      <div className="h-[35px] flex items-center px-6 border-b border-black/10 flex-shrink-0">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-title-brown font-sans text-sm p-0 transition-opacity hover:opacity-70"
-        >
-          <span className="text-lg leading-none">←</span>
-          <span>Back</span>
-        </button>
-      </div>
-
       {/* Content area */}
-      <div className="px-[37px] pt-3 pb-[37px] flex flex-col gap-2 flex-1 overflow-hidden">
-        {/* Category dropdown */}
+      <div className="px-[37px] pt-8 pb-[37px] flex flex-col gap-2 flex-1 overflow-hidden">
+        {/* Category dropdown + close button row */}
+        <div className="flex items-center justify-between">
         <div
           className="relative self-start"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className="flex items-center gap-2 px-[10px] py-[5px] rounded-md bg-transparent cursor-pointer font-sans text-[13px] text-[#3a2a0a] transition-colors hover:bg-black/[0.04]"
-            style={{ border: '1.5px solid #9747FF' }}
+            className="flex items-center gap-2 px-[10px] min-w-[220px] min-h-[35px] py-[5px] rounded-md bg-transparent cursor-pointer font-sans text-[13px] text-[#3a2a0a] transition-colors hover:bg-black/[0.04]"
+            style={{ border: '1px solid #3a2d25' }}
           >
             <span
               className="w-[11px] h-[11px] rounded-full flex-shrink-0 inline-block"
               style={{ backgroundColor: activeCat.color }}
             />
-            <span>{activeCat.name}</span>
+            <span className='grow text-left'>{activeCat.name}</span>
             <svg
               width="12" height="12" viewBox="0 0 12 12" fill="none"
               className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
             >
-              <path d="M2 4L6 8L10 4" stroke="#9747FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 4L6 8L10 4" stroke="#3a2d25" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
           {dropdownOpen && (
             <div
-              className="absolute top-full mt-1 left-0 rounded-md bg-cream shadow-md z-20 overflow-hidden min-w-[180px]"
-              style={{ border: '1.5px solid #9747FF' }}
+              className="absolute top-full mt-1   min-w-[220px] left-0 rounded-md bg-cream shadow-md z-20 overflow-hidden min-w-[180px]"
+   
             >
               {CATEGORIES.map((cat) => (
                 <button
@@ -166,6 +156,18 @@ export default function NoteDetailPage({ id }: Props) {
               ))}
             </div>
           )}
+        </div>
+
+          <button
+            onClick={() => router.push('/dashboard')}
+            aria-label="Close note"
+            className="bg-transparent border-none cursor-pointer text-title-brown p-2 transition-opacity hover:opacity-70 leading-none"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="2" y1="2" x2="20" y2="20" />
+              <line x1="20" y1="2" x2="2" y2="20" />
+            </svg>
+          </button>
         </div>
 
         {/* Note card */}

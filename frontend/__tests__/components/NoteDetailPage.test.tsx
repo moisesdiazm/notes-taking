@@ -115,7 +115,7 @@ describe('NoteDetailPage', () => {
     render(<NoteDetailPage id="42" />)
     await screen.findByPlaceholderText('Note title...')
 
-    await user.click(screen.getByRole('button', { name: /Back/i }))
+    await user.click(screen.getByRole('button', { name: /close note/i }))
 
     expect(mockPush).toHaveBeenCalledWith('/dashboard')
   })
