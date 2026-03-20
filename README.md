@@ -30,33 +30,33 @@
 | Mar 19 (early AM) | 03:54–04:24 | ~30m | Django DRF backend (notes, categories, auth), API client in frontend, Docker + Postgres, tests, bug fixes |
 | Mar 19 (evening) | 22:17–22:44 | ~26m | Frontend unit + Playwright e2e testing setup, README update |
 
-  **Total: ~2h 50m**
+  **Total dev time: ~2h 50m**
 
 
-10. Finally designed and refined a deployment strategy using Claude. Asked for changes based on my personal experience specially around SSL termination, ECS usage optimization and database management.
+10. Designed and refined a deployment strategy using Claude. Asked for changes based on my personal experience specially around SSL termination, ECS usage optimization and database management.
 
 11. Finally performed a code review using Codex, for quality issues and maintainability. Generated a code review report with some recommendations I implemented.
 
 
 # Key design and technical decisions
 
-**Frontend-first development.** The frontend was built first using in-memory dummy data (`lib/store.tsx`). This forced the data model to be defined by what the UI actually needs — the backend was then designed to match that shape exactly, rather than the other way around.
+**Frontend-first development.** The first frontend iteration was built against in-memory dummy data (`lib/store.tsx`). That forced the data model to be defined by what the UI actually needed first; the backend was then shaped to match that contract rather than the other way around.
 
-**Email-based auth, no username.** Django's default auth uses `username`. `CustomUser` replaces it with `email` as `USERNAME_FIELD`, which is what the login form collects. No username field exists anywhere in the system.
+**Email-based auth, no username field.** Django's default auth uses `username`. `CustomUser` replaces that with `email` as `USERNAME_FIELD`, which matches the login form and stored user model. There is no persisted username field in the system.
 
-**Category slug as primary key.** Categories use a `SlugField` as PK (`"school"`, `"personal"`, `"random-thoughts"`) instead of an integer. This means the frontend and backend share the same string identifier — no ID-to-label mapping needed anywhere, and the `CATEGORIES` constant in `frontend/lib/types.ts` can be used directly without an API call.
+**Category slug as primary key.** Categories use a `SlugField` as PK (`"school"`, `"personal"`, `"random-thoughts"`) instead of an integer. The frontend and backend therefore share the same string identifier, and the `CATEGORIES` constant in `frontend/lib/types.ts` can be used directly without an extra category lookup API for the current UI.
 
 **PATCH only, no PUT.** `NoteViewSet` disables PUT (`http_method_names` excludes it). The autosave in `NoteDetailPage` always sends a partial update with only changed fields, so partial updates are the only supported write pattern.
 
-**Client-side category filtering.** The dashboard fetches all notes once and filters in-browser by `activeCategory`. The backend supports `?category=<slug>` filtering too, but the frontend doesn't use it — all notes are loaded upfront and the count badges in the sidebar are derived from that same array.
+**Client-side category filtering.** The dashboard fetches all notes once and filters in-browser by `activeCategory`. The backend supports `?category=<slug>` filtering too, but the current frontend does not use it; all notes are loaded up front and the sidebar counts are derived from that same array.
 
-**Autosave with debounce.** The note editor debounces saves by 400ms on every keystroke. `updated_at` is refreshed from the server response after each save, so "Last Edited" reflects the actual server timestamp rather than a client-side estimate.
+**Autosave with debounce.** The note editor debounces text saves by 400ms and merges pending text edits with immediate category changes before sending PATCH requests. `updated_at` is refreshed from the server response after each successful save, so "Last Edited" reflects the actual server timestamp rather than a client-side estimate.
 
-**Route pages are thin wrappers.** Next.js App Router pages in `app/` each contain a single line rendering a component. All logic, state, and effects live in `components/`. This keeps the component logic testable and decoupled from the routing layer.
+**Route pages are thin wrappers.** Next.js App Router pages in `app/` are minimal wrappers that render feature components. Most logic, state, and effects live in `components/`, which keeps the route files simple and the component logic directly testable.
 
-**Tests as checkpoints.** Tests were added after the core feature was complete and manually verified end-to-end. Their primary purpose is to protect against regressions when continuing development with AI agents — not to drive the initial implementation.
+**Tests as checkpoints.** Tests were added after the core feature was working and manually verified end to end. Their primary purpose is regression protection for continued development, especially when iterating quickly with AI assistance.
 
-**Playwright mocks the API, not the server.** E2E tests use `page.route()` to intercept fetch calls at the browser level. This means tests run without a backend, are fast, and still exercise the full frontend stack including routing and state.
+**Playwright mocks the API, not the server.** E2E tests use `page.route()` to intercept fetch calls at the browser level. That keeps them fast and deterministic while still exercising the full frontend stack, including routing and client-side state.
 
 
 # Agent documentation
@@ -65,12 +65,11 @@ Precise reference docs for implementing features or modifying the codebase:
 
 | Document | Contents |
 |----------|----------|
-| [docs/architecture.md](./docs/architecture.md) | Stack, repo layout, request flow, auth flow, data ownership, key conventions |
-| [docs/data-models.md](./docs/data-models.md) | All models (backend + frontend types), field definitions, backend↔frontend name mapping, how to add a field |
-| [docs/api.md](./docs/api.md) | Every endpoint: method, path, request/response shapes, routing table, frontend API client functions |
-| [docs/frontend.md](./docs/frontend.md) | File map, component behaviour (state, effects, interactions), lib functions, env vars, how to add a page |
-| [docs/backend.md](./docs/backend.md) | File map, settings, each app's models/serializers/views/urls, how to add an app or endpoint, env vars |
-| [docs/testing.md](./docs/testing.md) | How to run tests + coverage (frontend + backend), mocking patterns, how to add tests for a new feature |
+| [docs/backend.md](./docs/backend.md) | Stack, auth flow, key conventions and architectural decisions, env vars |
+| [docs/api.md](./docs/api.md) | Every endpoint: method, path, request/response shapes, frontend API client usage |
+| [docs/data-models.md](./docs/data-models.md) | Backend models, frontend types, backend↔frontend field name mapping |
+| [docs/frontend.md](./docs/frontend.md) | Routes, key frontend patterns (auth guard, autosave, category filtering) |
+| [docs/testing.md](./docs/testing.md) | How to run tests, critical mocking gotchas, test patterns |
 
 ---
 
@@ -137,7 +136,9 @@ Both services mount the local source directory, so code changes reload automatic
 **Routes:**
 | Path | Component |
 |------|-----------|
-| `/` | `LoginPage` — email/password form |
+| `/` | Redirects to `/login` |
+| `/login` | `LoginPage` (signin) — email/password form |
+| `/signup` | `LoginPage` (signup) — email/password form |
 | `/dashboard` | `DashboardPage` — note grid + category sidebar |
 | `/notes/[id]` | `NoteDetailPage` — autosaving note editor |
 
@@ -177,14 +178,14 @@ docker compose exec frontend npm run test:e2e
 docker compose exec frontend npm run test:e2e:ui
 ```
 
-**Unit tests** (`npm test`) — 45 tests across 6 suites:
+**Unit tests** (`npm test`) — 49 tests across 6 suites:
 
 | File | What's tested |
 |------|---------------|
 | `__tests__/lib/utils.test.ts` | `formatDate` (today/yesterday/older), `formatLastEdited`, `generateId` uniqueness |
 | `__tests__/lib/types.test.ts` | `CATEGORIES` shape/count, `getCategoryById` for all 3 categories, fallback display category for `null` |
 | `__tests__/lib/api.test.ts` | `getAccessToken`/`setTokens`/`clearTokens`, `login` (success + error cases), `getNotes`/`createNote`/`getNote`/`patchNote` with mocked `fetch`, preserves `null` categories from the API |
-| `__tests__/components/LoginPage.test.tsx` | Renders, variant toggle, error on failed login, redirect on success, loading state, already-authenticated redirect |
+| `__tests__/components/LoginPage.test.tsx` | Renders signin/signup modes, navigation between pages, error on failed login, redirect on success, loading state, already-authenticated redirect |
 | `__tests__/components/DashboardPage.test.tsx` | Auth redirect, note rendering, sidebar filtering, empty state, create note flow |
 | `__tests__/components/NoteDetailPage.test.tsx` | Auth redirect, nullable category fallback, debounced autosave, merged pending edits, back navigation |
 
@@ -192,7 +193,7 @@ docker compose exec frontend npm run test:e2e:ui
 
 | File | What's tested |
 |------|---------------|
-| `e2e/login.spec.ts` | Form renders, invalid credentials error, successful redirect, loading state, variant toggle |
+| `e2e/login.spec.ts` | Form renders, invalid credentials error, successful redirect, loading state, navigation to signup page |
 | `e2e/dashboard.spec.ts` | Notes display, category sidebar/filter, empty state, create new note, unauthenticated redirect |
 | `e2e/note-detail.spec.ts` | Title/content display, category dropdown open/close/change, editing, back navigation, unauthenticated redirect |
 

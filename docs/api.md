@@ -7,7 +7,7 @@ All endpoints except login and token refresh require:
 Authorization: Bearer <access_token>
 ```
 
-On 401, the frontend (`lib/api.ts:apiFetch`) clears tokens and redirects to `/`.
+On 401, the frontend (`lib/api.ts:apiFetch`) clears tokens and redirects to `/login`.
 
 ---
 
@@ -158,7 +158,7 @@ config/urls.py
 All fetch calls go through `apiFetch()` which:
 - Reads the access token from `localStorage` via `getAccessToken()`
 - Attaches `Authorization: Bearer` header
-- On 401: calls `clearTokens()` + redirects to `/`
+- On 401: calls `clearTokens()` + redirects to `/login`
 
 Public functions: `login`, `getNotes`, `createNote`, `getNote`, `patchNote`
 Token helpers: `getAccessToken`, `setTokens`, `clearTokens`
