@@ -5,12 +5,12 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # ── dev: hot-reload for docker-compose local development ─────────────────────
-# Uses node:22 (Debian) instead of alpine so Playwright system deps are available.
-# Does its own npm ci + playwright install rather than reusing the alpine deps stage.
-FROM node:22 AS dev
+# Use the Playwright image so browser binaries and system deps are already baked in.
+# Keep this tag aligned with @playwright/test in frontend/package.json.
+FROM mcr.microsoft.com/playwright:v1.58.2-noble AS dev
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci && npx playwright install --with-deps chromium
+RUN npm ci
 COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]

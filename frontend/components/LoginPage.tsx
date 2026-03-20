@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import catImg from '@/app/img/cat.png'
@@ -20,6 +21,7 @@ export default function LoginPage({ mode = 'signin' }: { mode?: Mode }) {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -58,13 +60,24 @@ export default function LoginPage({ mode = 'signin' }: { mode?: Mode }) {
               placeholder="Email"
               className="w-full h-[39px] px-[14px] border border-accent-purple rounded-md bg-transparent font-sans text-sm text-[#3a2a0a] outline-none focus:shadow-[0_0_0_2px_#9747FF44]"
             />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full h-[39px] px-[14px] border border-accent-purple rounded-md bg-transparent font-sans text-sm text-[#3a2a0a] outline-none focus:shadow-[0_0_0_2px_#9747FF44]"
-            />
+            <div className="relative flex items-center">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full h-[39px] px-[14px] pr-10 border border-accent-purple rounded-md bg-transparent font-sans text-sm text-[#3a2a0a] outline-none focus:shadow-[0_0_0_2px_#9747FF44]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-3 text-accent-purple opacity-60 hover:opacity-100 focus:outline-none"
+                tabIndex={-1}
+              >
+                {!showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {error && (
               <p className="m-0 font-sans text-xs text-red-600">{error}</p>
             )}
