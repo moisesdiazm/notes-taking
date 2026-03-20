@@ -177,9 +177,11 @@ export default function NoteDetailPage({ id }: Props) {
             boxShadow: '1px 1px 2px rgba(0,0,0,0.25)',
           }}
         >
-          <p className="m-0 font-sans text-xs text-black/45 leading-[1.4] select-none">
-            Last Edited: {formatLastEdited(lastUpdated)}
-          </p>
+          <div className='w-[100%] flex justify-end'>
+            <p className="m-0 font-sans text-xs text-black leading-[1.4] select-none">
+              Last Edited: {formatLastEdited(lastUpdated)}
+            </p>
+          </div>
 
           <textarea
             ref={titleRef}
