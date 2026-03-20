@@ -29,7 +29,7 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   })
   if (res.status === 401) {
     clearTokens()
-    window.location.href = '/'
+    window.location.href = '/login'
     throw new Error('Unauthorized')
   }
   return res
@@ -45,6 +45,23 @@ function mapNote(raw: any): Note {
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
   }
+}
+
+export async function register(
+  email: string,
+  password: string,
+): Promise<{ access: string; refresh: string }> {
+  const res = await fetch(`${BASE_URL}/api/auth/register/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    const msg = (err.email?.[0] as string | undefined) ?? (err.non_field_errors?.[0] as string | undefined) ?? 'Registration failed'
+    throw new Error(msg)
+  }
+  return res.json()
 }
 
 export async function login(

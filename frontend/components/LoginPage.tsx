@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import catImg from '@/app/img/cat.png'
 import plantImg from '@/app/img/plant.png'
-import { login, setTokens, getAccessToken } from '@/lib/api'
+import { login, register, setTokens, getAccessToken } from '@/lib/api'
 
 type Mode = 'signin' | 'signup'
 
@@ -30,11 +30,11 @@ export default function LoginPage({ mode = 'signin' }: { mode?: Mode }) {
     setError(null)
     setLoading(true)
     try {
-      const tokens = await login(email, password)
+      const tokens = await (isSignUp ? register(email, password) : login(email, password))
       setTokens(tokens.access, tokens.refresh)
       router.push('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : isSignUp ? 'Registration failed' : 'Login failed')
     } finally {
       setLoading(false)
     }

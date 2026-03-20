@@ -18,6 +18,7 @@ jest.mock('next/image', () => ({
 
 jest.mock('../../lib/api', () => ({
   login: (...args: unknown[]) => mockLogin(...args),
+  register: (...args: unknown[]) => mockRegister(...args),
   setTokens: (...args: unknown[]) => mockSetTokens(...args),
   getAccessToken: () => mockGetAccessToken(),
 }))
@@ -30,6 +31,7 @@ const mockReplace = jest.fn()
 const stableRouter = { push: mockPush, replace: mockReplace }
 
 const mockLogin = jest.fn()
+const mockRegister = jest.fn()
 const mockSetTokens = jest.fn()
 const mockGetAccessToken = jest.fn()
 
@@ -131,7 +133,7 @@ describe('LoginPage (signup mode)', () => {
 
   it('shows "Signing up…" text and disables button while request is in flight', async () => {
     let resolveLogin!: (v: unknown) => void
-    mockLogin.mockReturnValue(new Promise((r) => { resolveLogin = r }))
+    mockRegister.mockReturnValue(new Promise((r) => { resolveLogin = r }))
     render(<LoginPage mode="signup" />)
 
     await userEvent.type(screen.getByPlaceholderText('Email'), 'user@example.com')
