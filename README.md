@@ -80,10 +80,22 @@ A full-stack notes app. Next.js 14 frontend connected to a Django REST Framework
 
 ```
 notes-taking/
-├── frontend/           # Next.js 14 App Router (TypeScript + Tailwind)
-├── backend/            # Django 5 + DRF + SimpleJWT
-├── docker-compose.yml  # Local development
-└── docs/               # Agent reference documentation
+├── frontend/                   # Next.js 14 App Router (TypeScript + Tailwind)
+│   ├── app/                    # Route pages (login, signup, dashboard, notes/[id])
+│   ├── components/             # Feature components (LoginPage, DashboardPage, NoteDetailPage)
+│   ├── lib/                    # API client, types, utils, fonts
+│   ├── __tests__/              # Jest + React Testing Library unit tests
+│   ├── e2e/                    # Playwright integration tests
+│   └── Dockerfile
+├── backend/                    # Django 5 + DRF + SimpleJWT
+│   ├── apps/
+│   │   ├── notes/              # Notes + categories models, views, serializers
+│   │   └── users/              # Custom email-based auth
+│   ├── config/                 # Django settings, URLs, WSGI/ASGI
+│   └── Dockerfile
+├── infrastructure/             # Terraform (AWS: ECS, RDS, CloudFront, ALB, ECR)
+├── docs/                       # Agent reference documentation
+└── docker-compose.yml          # Local development
 ```
 
 
@@ -210,7 +222,7 @@ docker compose exec frontend npm run test:e2e:ui
 | `utils.ts` | 100% | 100% | 100% | 100% |
 | **All files** | **93.6%** | **83.13%** | **88.23%** | **95.38%** |
 
-Full frontend reference → [docs/frontend.md](./docs/frontend.md)
+Frontend reference for agents → [docs/frontend.md](./docs/frontend.md)
 
 ---
 
@@ -258,7 +270,7 @@ JWT-based. Login returns an `access` token (1 hour) and a `refresh` token (7 day
 Authorization: Bearer <access_token>
 ```
 
-Tokens are stored in `localStorage` by the frontend. On 401, tokens are cleared and the user is redirected to `/`. → Full details in [docs/api.md](./docs/api.md)
+Tokens are stored in `localStorage` by the frontend. On 401, tokens are cleared and the user is redirected to `/`. → Details in [docs/api.md](./docs/api.md)
 
 ### Endpoints
 
@@ -274,7 +286,7 @@ Tokens are stored in `localStorage` by the frontend. On 401, tokens are cleared 
 | PATCH | `/api/notes/{id}/` | Yes | Partial update |
 | DELETE | `/api/notes/{id}/` | Yes | Delete |
 
-Full request/response shapes, error formats, and frontend API client reference → [docs/api.md](./docs/api.md)
+Full request/response shapes, error formats, and frontend API client reference for agents → [docs/api.md](./docs/api.md)
 
 ---
 
