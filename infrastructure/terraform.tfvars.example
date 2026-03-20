@@ -1,0 +1,17 @@
+aws_region    = "us-east-1"
+app_name      = "notes-taking"
+environment   = "production"
+
+# Root domain already managed in Route 53 (e.g. example.com)
+# Subdomains app.<domain> and api.<domain> will be created automatically
+domain_name = "example.com"
+
+# Generate with: openssl rand -base64 50
+django_secret_key = "replace-with-a-real-secret-key"
+
+# Use a strong random password
+db_password = "replace-with-a-strong-password"
+
+# Generate with: openssl rand -hex 32
+# Sent by CloudFront as X-CloudFront-Secret header — prevents direct ALB access
+cloudfront_secret = "replace-with-a-random-hex-string"

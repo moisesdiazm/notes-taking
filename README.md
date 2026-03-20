@@ -1,15 +1,92 @@
+
+# Process summary: How I used AI to develop in ~3 hours following best practices and high quality standards
+
+1. Read through the instructions carefully and watched the video requirements. Wrote down important notes to instruct the agents.
+
+2. Downloaded relevant skills for the project:
+- Django patterns, security, tdd, verification.
+- Next JS Best practices
+- Docker best practices
+
+3. Connected MCPs for Figma. Web-based MCP has a limit on the amount of request for free users, I had to use a community MCP server running in local connected as a developer plugin in Figma. This worked great to surf the design.
+
+4. Edited the figma frames to be AI-ready. E.g. instead of "Macbook Pro 16 - 1" -> "Login Page" / "Detail Page" / "Dashboard Page"
+
+5. Developed frontend: Asked claude to use NextJS best practices skill to implement the frames in my figma design, without considering backend, using in-memory dummy data. Asked for refactoring for: using tailwind css. As the frontend defines the data that is required, this would be a great foundation for the AI to understand the required backend endpoints and data models. Some minor UI adjustments were made by hand.
+
+6. Developed backend: I asked Claude to draft a plan of the required, use django best practices skills for DRF, plan on the models and endpoints required based on the frontend dummy data files. I asked to implement login using django but modify default auth to use email instead of username. Asked for a plan to verify before implementation. Asked minor modifications as well as adding a seeding script to pre-fill db with demo data. 
+
+7. I asked Claude to document the backend endpoints, data models and authentication details into the readme (but I usually use a dedicated folder of markdowns as references for agents). Asked to use it as reference for modifying fronted to connect to the backend instead of using dummy data file.
+
+8. Asked Claude to dockerize application following docker best practices (skill) and generate a compose file for easy setup for local development. 
+
+9. Once I tested end-to-end the application manually and verified the most important code I used Claude to generate test cases which are critically important for continuing the work using AI. These would allow us to make changes in the app with the confidence that previous work is fully operational (checkpointing). I asked to create unit tests for backend including coverage analysis. Same for frontend including unit-tests and end-to-end tests using playwright.
+
+
+| Date | Time (UTC) | Duration | Topics |
+|------|-----------|----------|--------|
+| Mar 18 (evening) | 02:00–03:10 | ~1h 10m | Frontend scaffolding from Figma design (Login, Dashboard, Note Detail), Next.js setup, `.gitignore` |
+| Mar 18 (cont.) | 03:10–03:54 | ~44m | UI per page refinement (parallel agents per page), Flexbox/Grid refactor, Tailwind migration, Login hydration fix, PNG image fix |
+| Mar 19 (early AM) | 03:54–04:24 | ~30m | Django DRF backend (notes, categories, auth), API client in frontend, Docker + Postgres, tests, bug fixes |
+| Mar 19 (evening) | 22:17–22:44 | ~26m | Frontend unit + Playwright e2e testing setup, README update |
+
+  **Total: ~2h 50m**
+
+
+10. Finally designed and refined a deployment strategy using Claude. Asked for changes based on my personal experience specially around SSL termination, ECS usage optimization and database management.
+
+11. Finally performed a code review using Codex, for quality issues and maintainability. Generated a code review report with some recommendations I implemented.
+
+
+# Key design and technical decisions
+
+**Frontend-first development.** The frontend was built first using in-memory dummy data (`lib/store.tsx`). This forced the data model to be defined by what the UI actually needs — the backend was then designed to match that shape exactly, rather than the other way around.
+
+**Email-based auth, no username.** Django's default auth uses `username`. `CustomUser` replaces it with `email` as `USERNAME_FIELD`, which is what the login form collects. No username field exists anywhere in the system.
+
+**Category slug as primary key.** Categories use a `SlugField` as PK (`"school"`, `"personal"`, `"random-thoughts"`) instead of an integer. This means the frontend and backend share the same string identifier — no ID-to-label mapping needed anywhere, and the `CATEGORIES` constant in `frontend/lib/types.ts` can be used directly without an API call.
+
+**PATCH only, no PUT.** `NoteViewSet` disables PUT (`http_method_names` excludes it). The autosave in `NoteDetailPage` always sends a partial update with only changed fields, so partial updates are the only supported write pattern.
+
+**Client-side category filtering.** The dashboard fetches all notes once and filters in-browser by `activeCategory`. The backend supports `?category=<slug>` filtering too, but the frontend doesn't use it — all notes are loaded upfront and the count badges in the sidebar are derived from that same array.
+
+**Autosave with debounce.** The note editor debounces saves by 400ms on every keystroke. `updated_at` is refreshed from the server response after each save, so "Last Edited" reflects the actual server timestamp rather than a client-side estimate.
+
+**Route pages are thin wrappers.** Next.js App Router pages in `app/` each contain a single line rendering a component. All logic, state, and effects live in `components/`. This keeps the component logic testable and decoupled from the routing layer.
+
+**Tests as checkpoints.** Tests were added after the core feature was complete and manually verified end-to-end. Their primary purpose is to protect against regressions when continuing development with AI agents — not to drive the initial implementation.
+
+**Playwright mocks the API, not the server.** E2E tests use `page.route()` to intercept fetch calls at the browser level. This means tests run without a backend, are fast, and still exercise the full frontend stack including routing and state.
+
+
+# Agent documentation
+
+Precise reference docs for implementing features or modifying the codebase:
+
+| Document | Contents |
+|----------|----------|
+| [docs/architecture.md](./docs/architecture.md) | Stack, repo layout, request flow, auth flow, data ownership, key conventions |
+| [docs/data-models.md](./docs/data-models.md) | All models (backend + frontend types), field definitions, backend↔frontend name mapping, how to add a field |
+| [docs/api.md](./docs/api.md) | Every endpoint: method, path, request/response shapes, routing table, frontend API client functions |
+| [docs/frontend.md](./docs/frontend.md) | File map, component behaviour (state, effects, interactions), lib functions, env vars, how to add a page |
+| [docs/backend.md](./docs/backend.md) | File map, settings, each app's models/serializers/views/urls, how to add an app or endpoint, env vars |
+| [docs/testing.md](./docs/testing.md) | How to run tests + coverage (frontend + backend), mocking patterns, how to add tests for a new feature |
+
+---
+
 # Notes Taking App
 
-A full-stack notes app. Next.js frontend with in-memory state (ready to wire up), Django REST Framework backend.
+A full-stack notes app. Next.js 14 frontend connected to a Django REST Framework backend, JWT authentication, and PostgreSQL — fully containerised with Docker Compose.
 
 ```
 notes-taking/
 ├── frontend/           # Next.js 14 App Router (TypeScript + Tailwind)
 ├── backend/            # Django 5 + DRF + SimpleJWT
-└── docker-compose.yml  # Local development
+├── docker-compose.yml  # Local development
+└── docs/               # Agent reference documentation
 ```
 
----
+
 
 ## Docker (local dev)
 
@@ -23,10 +100,11 @@ docker compose up --build
 # Backend  → http://localhost:8000
 ```
 
-On first run, run migrations and seed the database (wait for containers to be healthy):
+On first run, run migrations, create a super user and seed the database (wait for containers to be healthy):
 
 ```bash
 docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py createsuperuser
 docker compose exec backend python manage.py seed
 ```
 
@@ -70,240 +148,308 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-**Current state:** All data lives in `lib/store.tsx` (React Context, in-memory). The backend section below describes exactly what to replace.
+**Testing:**
+
+Unit tests (Jest + React Testing Library):
+```bash
+cd frontend
+npm test                 # run all unit tests
+npm run test:coverage    # with coverage report
+npm run test:watch       # watch mode
+```
+
+Unit tests via Docker Compose:
+```bash
+docker compose exec frontend npm test
+docker compose exec frontend npm run test:coverage
+```
+
+Integration tests (Playwright — requires the dev server running):
+```bash
+cd frontend
+npm run test:e2e      # headless
+npm run test:e2e:ui   # interactive UI mode
+```
+
+Integration tests via Docker Compose:
+```bash
+docker compose exec frontend npm run test:e2e
+docker compose exec frontend npm run test:e2e:ui
+```
+
+**Unit tests** (`npm test`) — 45 tests across 6 suites:
+
+| File | What's tested |
+|------|---------------|
+| `__tests__/lib/utils.test.ts` | `formatDate` (today/yesterday/older), `formatLastEdited`, `generateId` uniqueness |
+| `__tests__/lib/types.test.ts` | `CATEGORIES` shape/count, `getCategoryById` for all 3 categories, fallback display category for `null` |
+| `__tests__/lib/api.test.ts` | `getAccessToken`/`setTokens`/`clearTokens`, `login` (success + error cases), `getNotes`/`createNote`/`getNote`/`patchNote` with mocked `fetch`, preserves `null` categories from the API |
+| `__tests__/components/LoginPage.test.tsx` | Renders, variant toggle, error on failed login, redirect on success, loading state, already-authenticated redirect |
+| `__tests__/components/DashboardPage.test.tsx` | Auth redirect, note rendering, sidebar filtering, empty state, create note flow |
+| `__tests__/components/NoteDetailPage.test.tsx` | Auth redirect, nullable category fallback, debounced autosave, merged pending edits, back navigation |
+
+**Integration tests** (`npm run test:e2e`) — 22 passing Playwright tests across 3 spec files, API mocked via `page.route()`:
+
+| File | What's tested |
+|------|---------------|
+| `e2e/login.spec.ts` | Form renders, invalid credentials error, successful redirect, loading state, variant toggle |
+| `e2e/dashboard.spec.ts` | Notes display, category sidebar/filter, empty state, create new note, unauthenticated redirect |
+| `e2e/note-detail.spec.ts` | Title/content display, category dropdown open/close/change, editing, back navigation, unauthenticated redirect |
+
+**Coverage** (`npm run test:coverage`):
+
+| File | Stmts | Branch | Funcs | Lines |
+|------|-------|--------|-------|-------|
+| `DashboardPage.tsx` | 91.17% | 85.71% | 78.57% | 93.33% |
+| `LoginPage.tsx` | 100% | 84% | 100% | 100% |
+| `NoteDetailPage.tsx` | 94.87% | 89.47% | 82.14% | 94.28% |
+| `api.ts` | 87.75% | 73.91% | 100% | 93.02% |
+| `types.ts` | 88.88% | 75% | 100% | 100% |
+| `utils.ts` | 100% | 100% | 100% | 100% |
+| **All files** | **93.6%** | **83.13%** | **88.23%** | **95.38%** |
+
+Full frontend reference → [docs/frontend.md](./docs/frontend.md)
 
 ---
 
 ## Backend
 
-**Stack:** Django 5, Django REST Framework, SimpleJWT, django-cors-headers, django-filter, SQLite (dev)
+**Stack:** Django 5, Django REST Framework, SimpleJWT, django-cors-headers, django-filter, PostgreSQL
 
 ### Setup
 
 ```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate          # creates DB + seeds 3 categories
-python manage.py seed             # creates demo@example.com / demo1234 + 3 sample notes
-python manage.py runserver        # http://localhost:8000
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py seed
 ```
 
 Copy `.env.example` to `.env` to override defaults. No `.env` file is required for local development.
+
+**Testing:**
+
+```bash
+docker compose exec backend uv run coverage run --source='apps' manage.py test
+docker compose exec backend uv run coverage report -m
+```
+
+48 tests. Coverage:
+
+| File | Cover |
+|------|-------|
+| `apps/notes/models.py` | 100% |
+| `apps/notes/views.py` | 100% |
+| `apps/notes/serializers.py` | 100% |
+| `apps/notes/filters.py` | 100% |
+| `apps/users/models.py` | 100% |
+| `apps/users/views.py` | 100% |
+| `apps/users/serializers.py` | 93% |
+| `apps/notes/management/commands/seed.py` | 0% (management command, not unit tested) |
+| **Total** | **95%** |
 
 ---
 
 ### Authentication
 
-JWT-based. Login returns an `access` token (1 hour) and a `refresh` token (7 days).
+JWT-based. Login returns an `access` token (1 hour) and a `refresh` token (7 days). Send on every authenticated request:
 
-**Send on every authenticated request:**
 ```
 Authorization: Bearer <access_token>
 ```
 
-**Token refresh:** call `POST /api/auth/token/refresh/` with `{ "refresh": "<refresh_token>" }` before the access token expires.
-
----
+Tokens are stored in `localStorage` by the frontend. On 401, tokens are cleared and the user is redirected to `/`. → Full details in [docs/api.md](./docs/api.md)
 
 ### Endpoints
 
-#### `POST /api/auth/login/`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/login/` | No | Returns `{ access, refresh }` |
+| POST | `/api/auth/token/refresh/` | No | Returns new `{ access }` |
+| GET | `/api/categories/` | Yes | List all categories |
+| GET | `/api/notes/` | Yes | List user's notes (`?category=<slug>`) |
+| POST | `/api/notes/` | Yes | Create a note |
+| GET | `/api/notes/{id}/` | Yes | Get a note |
+| PATCH | `/api/notes/{id}/` | Yes | Partial update |
+| DELETE | `/api/notes/{id}/` | Yes | Delete |
 
-No auth required.
+Full request/response shapes, error formats, and frontend API client reference → [docs/api.md](./docs/api.md)
 
-**Request:**
-```json
-{ "email": "demo@example.com", "password": "demo1234" }
+---
+
+## Deployment — AWS
+
+### Architecture
+
+```mermaid
+graph TB
+    User((User))
+    DNS["Route 53\napp.domain / api.domain"]
+
+    subgraph Edge["AWS Edge (Global)"]
+        CF["CloudFront\nTLS termination\napp.domain"]
+        ACM_CF["ACM cert\nus-east-1"]
+    end
+
+    subgraph AWS["AWS (us-east-1)"]
+        ACM_API["ACM cert\napi.domain"]
+        subgraph VPC["VPC 10.0.0.0/16"]
+            subgraph Public["Public Subnets (2 AZs)"]
+                ALB_FE["ALB · Frontend :80\n(CloudFront-only via secret header)"]
+                ALB_BE["ALB · Backend :443 HTTPS\n:80 → redirect to HTTPS"]
+                ECS_FE["ECS Fargate · Next.js :3000"]
+                ECS_BE["ECS Fargate · Django :8000"]
+            end
+            subgraph Private["Private Subnets (2 AZs)"]
+                RDS[("RDS PostgreSQL 16\ndb.t3.micro")]
+            end
+        end
+        ECR["ECR\nfrontend + backend repos"]
+        SM["Secrets Manager\nSECRET_KEY · DATABASE_URL"]
+        CW["CloudWatch Logs"]
+    end
+
+    User -->|"HTTPS"| DNS
+    DNS -->|"app.domain"| CF
+    DNS -->|"api.domain"| ALB_BE
+    CF -->|"HTTP + X-CloudFront-Secret"| ALB_FE
+    ACM_CF -.->|"TLS cert"| CF
+    ACM_API -.->|"TLS cert"| ALB_BE
+    ALB_FE --> ECS_FE
+    ALB_BE --> ECS_BE
+    ECS_BE --> RDS
+    ECR -.->|"image pull"| ECS_FE
+    ECR -.->|"image pull"| ECS_BE
+    SM -.->|"secrets at startup"| ECS_BE
+    ECS_FE -.->|"logs"| CW
+    ECS_BE -.->|"logs"| CW
 ```
 
-**Response `200`:**
-```json
-{
-  "access": "<jwt_access_token>",
-  "refresh": "<jwt_refresh_token>"
+**Services:**
+
+| Service | Type | Size | Notes |
+|---------|------|------|-------|
+| DNS | Route 53 | — | `app.<domain>` → CloudFront, `api.<domain>` → backend ALB |
+| CDN / TLS | CloudFront | PriceClass_100 | SSL termination at edge; static assets cached up to 1 year |
+| SSL Certs | ACM | 2 certs | `app.<domain>` in us-east-1 for CloudFront; `api.<domain>` in deployment region |
+| Frontend | ECS Fargate | 0.25 vCPU / 512 MB | Next.js server; only reachable via CloudFront secret header |
+| Backend | ECS Fargate | 0.25 vCPU / 512 MB | Django + Gunicorn; HTTPS on port 443 |
+| Database | RDS PostgreSQL 16 | db.t3.micro | Private subnet, not internet-facing |
+| Images | ECR | 2 repos | Lifecycle policy keeps last 5 tags |
+| Secrets | Secrets Manager | 1 secret | `SECRET_KEY` + `DATABASE_URL` |
+| Logs | CloudWatch | 7-day retention | Per service log group |
+
+ECS tasks run in **public subnets** with `assign_public_ip = true` to pull images from ECR without a NAT Gateway (saves ~$30/month). The frontend ALB is locked to CloudFront traffic only via a shared secret header (`X-CloudFront-Secret`). The backend ALB terminates HTTPS directly with an ACM certificate. RDS sits in **private subnets** — unreachable from the internet.
+
+---
+
+### Terraform
+
+Infrastructure is defined in `infrastructure/` using Terraform.
+
+```
+infrastructure/
+├── main.tf              # Provider (+ us-east-1 alias for CloudFront ACM)
+├── variables.tf         # All input variables
+├── outputs.tf           # HTTPS URLs, ECR URLs, RDS endpoint
+├── vpc.tf               # VPC, subnets, IGW, route tables
+├── security_groups.tf   # SGs for ALB, ECS, RDS
+├── ecr.tf               # Container registries + lifecycle policies
+├── rds.tf               # PostgreSQL instance
+├── acm.tf               # ACM certificates (api + app subdomains)
+├── route53.tf           # DNS records + ACM validation CNAMEs
+├── cloudfront.tf        # CloudFront distribution (frontend TLS termination)
+├── alb.tf               # Two ALBs + target groups + listeners (HTTPS on backend)
+├── ecs.tf               # Cluster, task definitions, services
+├── iam.tf               # ECS task execution role
+├── secrets.tf           # Secrets Manager for Django secrets
+└── terraform.tfvars.example
+```
+
+**Prerequisites:** AWS CLI configured, Terraform ≥ 1.5, Docker. A hosted zone for your domain must already exist in Route 53.
+
+```bash
+cd infrastructure
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with real values
+
+terraform init
+terraform plan
+terraform apply
+```
+
+After `apply`, Terraform outputs the HTTPS URLs (`https://app.<domain>`, `https://api.<domain>`) and ECR repository URLs. ACM certificate validation is automatic via the DNS records Terraform creates — it may take a few minutes on first apply.
+
+---
+
+### Deploy workflow
+
+**1. Create a production Django settings file** (`backend/config/settings/production.py`):
+
+```python
+from .base import *  # noqa
+
+DEBUG = False
+
+DATABASES = {
+    'default': env.db('DATABASE_URL'),
 }
+
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS')
 ```
 
-**Error `400`:**
-```json
-{ "non_field_errors": ["Invalid email or password."] }
+**2. Build and push images to ECR:**
+
+```bash
+# Authenticate Docker with ECR
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin <ECR_URL>
+
+# Backend
+docker build -t notes-taking-backend ./backend
+docker tag notes-taking-backend:latest <ECR_BACKEND_URL>:latest
+docker push <ECR_BACKEND_URL>:latest
+
+# Frontend — pass the backend URL from terraform output at build time
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=http://<BACKEND_ALB_DNS> \
+  -t notes-taking-frontend ./frontend
+docker tag notes-taking-frontend:latest <ECR_FRONTEND_URL>:latest
+docker push <ECR_FRONTEND_URL>:latest
 ```
+
+**3. Run database migrations:**
+
+```bash
+# One-off ECS task to migrate + seed
+aws ecs run-task \
+  --cluster notes-taking \
+  --task-definition notes-taking-backend \
+  --launch-type FARGATE \
+  --overrides '{"containerOverrides":[{"name":"backend","command":["python","manage.py","migrate"]}]}' \
+  --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_ID>],securityGroups=[<SG_ID>],assignPublicIp=ENABLED}"
+```
+
+**4. Force a new ECS deployment:**
+
+```bash
+aws ecs update-service --cluster notes-taking --service notes-taking-backend --force-new-deployment
+aws ecs update-service --cluster notes-taking --service notes-taking-frontend --force-new-deployment
+```
+
+> **Note on `NEXT_PUBLIC_API_URL`:** Next.js bakes this value into the client bundle at build time. Build the frontend image *after* `terraform apply` so the backend ALB DNS name is available. For a stable URL across redeployments, point a custom domain at the ALBs via Route 53 and use that domain instead.
 
 ---
 
-#### `POST /api/auth/token/refresh/`
+### Infrastructure limitations
 
-No auth required.
+This setup is intentionally minimal — enough to run the application in production securely, but **not designed to scale without modifications**. Before increasing traffic or load, consider the following:
 
-**Request:**
-```json
-{ "refresh": "<jwt_refresh_token>" }
-```
-
-**Response `200`:**
-```json
-{ "access": "<new_jwt_access_token>" }
-```
-
----
-
-#### `GET /api/categories/`
-
-Auth required.
-
-**Response `200`:**
-```json
-[
-  { "id": "random-thoughts", "name": "Random Thoughts", "color": "#EF9C66" },
-  { "id": "school",          "name": "School",          "color": "#FCDCA0" },
-  { "id": "personal",        "name": "Personal",        "color": "#78ABA8" }
-]
-```
-
-Categories are global (not per-user) and fixed — identical to the frontend `CATEGORIES` constant in `lib/types.ts`.
-
----
-
-#### `GET /api/notes/`
-
-Auth required. Returns only the authenticated user's notes, ordered by `updated_at` descending.
-
-**Optional query param:** `?category=school` — filters by category slug.
-
-**Response `200`:**
-```json
-[
-  {
-    "id": 1,
-    "title": "Midterm prep",
-    "content": "Review chapters 4-7...",
-    "category": "school",
-    "created_at": "2026-03-18T10:00:00Z",
-    "updated_at": "2026-03-18T10:00:00Z"
-  }
-]
-```
-
----
-
-#### `POST /api/notes/`
-
-Auth required.
-
-**Request:**
-```json
-{
-  "title": "My note",
-  "content": "Some text",
-  "category": "personal"
-}
-```
-
-`title` and `content` are optional (blank is allowed). `category` is the slug string.
-
-**Response `201`:** same shape as a single note object above.
-
----
-
-#### `GET /api/notes/{id}/`
-
-Auth required. Returns 404 if the note belongs to another user.
-
-**Response `200`:** same shape as a single note object.
-
----
-
-#### `PATCH /api/notes/{id}/`
-
-Auth required. Partial update — send only the fields you want to change.
-
-**Request (any subset):**
-```json
-{ "title": "Updated title" }
-```
-
-**Response `200`:** full note object with updated `updated_at`.
-
----
-
-#### `DELETE /api/notes/{id}/`
-
-Auth required.
-
-**Response `204`:** no body.
-
----
-
-### Field name mapping
-
-The frontend uses camelCase; the backend uses snake_case. Map these when reading/writing:
-
-| Frontend (`lib/types.ts`) | Backend API |
-|---------------------------|-------------|
-| `note.id` | `note.id` |
-| `note.title` | `note.title` |
-| `note.content` | `note.content` |
-| `note.category` (CategoryId string) | `note.category` (same slug string) |
-| `note.createdAt` | `note.created_at` |
-| `note.updatedAt` | `note.updated_at` |
-
----
-
-### Connecting the frontend
-
-These are the exact locations in the frontend codebase to replace with API calls:
-
-#### 1. Login — `components/LoginPage.tsx:27`
-
-`handleSignIn` currently does `router.push('/dashboard')` unconditionally. Replace with:
-- `POST /api/auth/login/` with `{ email, password }`
-- On success: store `access` + `refresh` tokens (e.g. `localStorage`), then `router.push('/dashboard')`
-- On error: show the error message from the response
-
-#### 2. Notes list — `components/DashboardPage.tsx:11`
-
-`const { notes, addNote } = useNotes()` pulls from in-memory state.
-
-- On mount: `GET /api/notes/` and set local state
-- Category filter: pass `?category=<id>` when `activeCategory` is set (or filter client-side)
-- `countByCategory` sidebar counts: derive from the fetched notes array
-
-#### 3. Create note — `components/DashboardPage.tsx:20`
-
-`addNote(...)` currently creates a local note and returns it synchronously.
-
-Replace with:
-- `POST /api/notes/` with `{ title: 'Untitled', content: '', category: activeCategory ?? 'random-thoughts' }`
-- On success: use the returned `id` to navigate to `/notes/<id>`
-
-#### 4. Load single note — `components/NoteDetailPage.tsx:23`
-
-`getNoteById(id)` reads from context.
-
-Replace with:
-- `GET /api/notes/{id}/` on mount
-- Map `created_at` → `createdAt`, `updated_at` → `updatedAt`
-
-#### 5. Autosave — `components/NoteDetailPage.tsx:48`
-
-`scheduleSave(patch)` calls `updateNote(id, patch)` after a 400 ms debounce.
-
-Replace `updateNote` with:
-- `PATCH /api/notes/{id}/` with the patch payload
-- Update `lastUpdated` state from the returned `updated_at`
-
-#### 6. Category list — `components/DashboardPage.tsx:57` and `NoteDetailPage.tsx:124`
-
-Both iterate `CATEGORIES` from `lib/types.ts`. This can stay as-is (categories are fixed and match the backend exactly), or be fetched once from `GET /api/categories/` and cached.
-
----
-
-### Demo credentials
-
-```
-email:    demo@example.com
-password: demo1234
-```
-
-Run `python manage.py seed` to create them (idempotent — safe to run multiple times).
+| Area | Current config | What to change |
+|------|---------------|----------------|
+| **RDS availability** | Single AZ | Add `multi_az = true` to `rds.tf` to survive an AZ failure |
+| **RDS backups** | 7-day retention | Increase `backup_retention_period` to 30+ days |
+| **ECS task size** | 0.25 vCPU / 512 MB per service | Increase `cpu` / `memory` in `ecs.tf` under sustained load |
+| **ECS desired count** | 1 task per service | Increase `desired_count` or add autoscaling for high availability |
+| **CloudWatch logs** | 7-day retention | Increase `retention_in_days` in `ecs.tf` for longer incident history |
+| **No WAF** | CloudFront has no WAF rules | Attach `aws_wafv2_web_acl` to the CloudFront distribution for rate limiting and IP blocking |
+| **No autoscaling** | Fixed task count | Add `aws_appautoscaling_target` + policies to ECS services |
+| **Single region** | All resources in one region | Multi-region DR requires additional planning |
