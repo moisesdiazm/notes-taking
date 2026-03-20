@@ -7,18 +7,12 @@ import catImg from '@/app/img/cat.png'
 import plantImg from '@/app/img/plant.png'
 import { login, setTokens, getAccessToken } from '@/lib/api'
 
-type LoginVariant = 'new-friend' | 'returning'
+type Mode = 'signin' | 'signup'
 
-function pickVariant(): LoginVariant {
-  return Math.random() < 0.5 ? 'new-friend' : 'returning'
-}
-
-export default function LoginPage() {
+export default function LoginPage({ mode = 'signin' }: { mode?: Mode }) {
   const router = useRouter()
-  const [variant, setVariant] = useState<LoginVariant>('new-friend')
 
   useEffect(() => {
-    setVariant(pickVariant())
     if (getAccessToken()) {
       router.replace('/dashboard')
     }
@@ -29,9 +23,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const isNewFriend = variant === 'new-friend'
+  const isSignUp = mode === 'signup'
 
-  async function handleSignIn(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -46,21 +40,17 @@ export default function LoginPage() {
     }
   }
 
-  function toggleVariant() {
-    setVariant((v) => (v === 'new-friend' ? 'returning' : 'new-friend'))
-  }
-
   return (
     <div className="min-h-screen w-full bg-cream flex items-center justify-center">
       <div className="flex justify-center w-full max-w-[50rem]">
         <div className="flex flex-col justify-center px-16 gap-8">
-          <CharacterBadge isNewFriend={isNewFriend} />
+          <CharacterBadge isSignUp={isSignUp} />
 
           <h1 className="m-0 font-serif font-bold text-5xl leading-[1.1] text-title-brown">
-            {isNewFriend ? 'Yay, New Friend!' : "Yay, You're Back!"}
+            {isSignUp ? 'Yay, New Friend!' : "Yay, You're Back!"}
           </h1>
 
-          <form onSubmit={handleSignIn} className="flex flex-col gap-[14px]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
             <input
               type="email"
               value={email}
@@ -83,15 +73,17 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full h-[43px] mt-2 border border-accent-brown rounded-full bg-transparent font-sans text-sm font-medium text-accent-brown cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading
+                ? isSignUp ? 'Signing up…' : 'Signing in…'
+                : isSignUp ? 'Sign Up' : 'Sign In'}
             </button>
           </form>
 
           <span
-            onClick={toggleVariant}
+            onClick={() => router.push(isSignUp ? '/login' : '/signup')}
             className="font-sans text-xs text-accent-brown underline cursor-pointer select-none text-center"
           >
-            {isNewFriend ? "We're already friends!" : "Oops! I've never been here before"}
+            {isSignUp ? "We're already friends!" : "Oops! I've never been here before"}
           </span>
         </div>
       </div>
@@ -99,14 +91,12 @@ export default function LoginPage() {
   )
 }
 
-function CharacterBadge({ isNewFriend }: { isNewFriend: boolean }) {
+function CharacterBadge({ isSignUp }: { isSignUp: boolean }) {
   return (
-    <div
-      className="flex flex-col justify-center gap-2"
-    >
+    <div className="flex flex-col justify-center gap-2">
       <Image
-        src={isNewFriend ? catImg : plantImg}
-        alt={isNewFriend ? 'cat' : 'plant'}
+        src={isSignUp ? catImg : plantImg}
+        alt={isSignUp ? 'cat' : 'plant'}
         className="object-contain"
         style={{ maxHeight: '140px', width: 'auto' }}
       />
