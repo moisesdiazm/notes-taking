@@ -1,5 +1,5 @@
 
-# Process summary: How I used AI to develop in ~3 hours following best practices and high quality standards
+# Process summary: How I used AI to develop in ~4 hours following best practices and high quality standards
 
 1. Read through the instructions carefully and watched the video requirements. Wrote down important notes to instruct the agents.
 
@@ -22,20 +22,21 @@
 
 9. Once I tested end-to-end the application manually and verified the most important code I used Claude to generate test cases which are critically important for continuing the work using AI. These would allow us to make changes in the app with the confidence that previous work is fully operational (checkpointing). I asked to create unit tests for backend including coverage analysis. Same for frontend including unit-tests and end-to-end tests using playwright.
 
-
-| Date | Time (UTC) | Duration | Topics |
-|------|-----------|----------|--------|
-| Mar 18 (evening) | 02:00–03:10 | ~1h 10m | Frontend scaffolding from Figma design (Login, Dashboard, Note Detail), Next.js setup, `.gitignore` |
-| Mar 18 (cont.) | 03:10–03:54 | ~44m | UI per page refinement (parallel agents per page), Flexbox/Grid refactor, Tailwind migration, Login hydration fix, PNG image fix |
-| Mar 19 (early AM) | 03:54–04:24 | ~30m | Django DRF backend (notes, categories, auth), API client in frontend, Docker + Postgres, tests, bug fixes |
-| Mar 19 (evening) | 22:17–22:44 | ~26m | Frontend unit + Playwright e2e testing setup, README update |
-
-  **Total dev time for first working version: ~2h 50m**
-
-
 10. Designed and refined a deployment strategy using Claude. Asked for changes based on my personal experience specially around SSL termination, ECS usage optimization and database management.
 
 11. Finally performed a code review using Codex, for quality issues and maintainability. Generated a code review report with some recommendations I implemented.
+
+
+
+| Date | Time (CST) | Duration | Topics |
+|------|-----------|----------|--------|
+| Mar 17 (evening) | 20:00–21:10 | ~1h 10m | Frontend scaffolding from Figma design (Login, Dashboard, Note Detail), Next.js setup, `.gitignore` |
+| Mar 17 (cont.) | 21:10–21:54 | ~44m | UI per page refinement (parallel agents per page), Flexbox/Grid refactor, Tailwind migration, Login hydration fix, PNG image fix |
+| Mar 18 (evening) | 21:54–22:24 | ~30m | Django DRF backend (notes, categories, auth), API client in frontend, Docker + Postgres, tests, bug fixes |
+| Mar 19 (afternoon) | 15:31–16:41 | ~1h 10m | Auth/signup fixes, docs cleanup, UI polish, README updates |
+| Mar 19 (cont.) | 16:17–16:44 | ~26m | Frontend unit + Playwright e2e testing setup, README update |
+
+  **Total dev time: ~4h**
 
 
 # Key design and technical decisions
