@@ -13,6 +13,29 @@ On 401, the frontend (`lib/api.ts:apiFetch`) clears tokens and redirects to `/lo
 
 ## Auth
 
+### `POST /api/auth/register/`
+
+No auth required.
+
+**Request:**
+```json
+{ "email": "user@example.com", "password": "secret123" }
+```
+
+`password` must be at least 8 characters. Returns 400 if the email is already registered.
+
+**Response 201:**
+```json
+{ "access": "<jwt>", "refresh": "<jwt>" }
+```
+
+**Response 400 (email taken):**
+```json
+{ "email": ["An account with this email already exists."] }
+```
+
+---
+
 ### `POST /api/auth/login/`
 
 No auth required. Handled by `LoginView` + `LoginSerializer` in `apps/users/`.

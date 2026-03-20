@@ -263,6 +263,7 @@ Tokens are stored in `localStorage` by the frontend. On 401, tokens are cleared 
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| POST | `/api/auth/register/` | No | Creates account, returns `{ access, refresh }` |
 | POST | `/api/auth/login/` | No | Returns `{ access, refresh }` |
 | POST | `/api/auth/token/refresh/` | No | Returns new `{ access }` |
 | GET | `/api/categories/` | Yes | List all categories |
