@@ -1,4 +1,4 @@
-import { Note } from './types'
+import { type CategoryId, type Note } from './types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
@@ -76,7 +76,7 @@ export async function getNotes(category?: string | null): Promise<Note[]> {
 export async function createNote(data: {
   title: string
   content: string
-  category: string
+  category: CategoryId
 }): Promise<Note> {
   const res = await apiFetch('/api/notes/', {
     method: 'POST',
@@ -94,7 +94,7 @@ export async function getNote(id: string): Promise<Note> {
 
 export async function patchNote(
   id: string,
-  patch: Partial<{ title: string; content: string; category: string }>,
+  patch: Partial<{ title: string; content: string; category: CategoryId | null }>,
 ): Promise<Note> {
   const res = await apiFetch(`/api/notes/${id}/`, {
     method: 'PATCH',

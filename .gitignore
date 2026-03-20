@@ -37,3 +37,7 @@ backend/staticfiles/
 .env.production
 .coverage
 .python-version
+
+coverage/
+test-results/
+playwright-report/

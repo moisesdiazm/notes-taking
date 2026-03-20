@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
+import { CATEGORIES, CategoryId, getDisplayCategory } from '@/lib/types'
 import { formatLastEdited } from '@/lib/utils'
 import { getNote, patchNote, getAccessToken } from '@/lib/api'
 import type { Note } from '@/lib/types'
@@ -24,11 +24,12 @@ export default function NoteDetailPage({ id }: Props) {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [category, setCategory] = useState<CategoryId>('random-thoughts')
+  const [category, setCategory] = useState<CategoryId | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(new Date().toISOString())
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingPatchRef = useRef<Partial<{ title: string; content: string; category: CategoryId | null }>>({})
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
@@ -57,34 +58,49 @@ export default function NoteDetailPage({ id }: Props) {
   useEffect(() => { autoResize(titleRef.current) }, [title, autoResize])
   useEffect(() => { autoResize(contentRef.current) }, [content, autoResize])
 
-  function scheduleSave(patch: Partial<{ title: string; content: string; category: CategoryId }>) {
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [])
+
+  function scheduleSave(patch: Partial<{ title: string; content: string; category: CategoryId | null }>) {
+    pendingPatchRef.current = { ...pendingPatchRef.current, ...patch }
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
-      patchNote(id, patch).then((updated) => setLastUpdated(updated.updatedAt)).catch(() => {})
+      const pendingPatch = pendingPatchRef.current
+      pendingPatchRef.current = {}
+      patchNote(id, pendingPatch)
+        .then((updated) => setLastUpdated(updated.updatedAt))
+        .catch(() => {})
     }, 400)
   }
 
   function handleTitleChange(val: string) {
     setTitle(val)
-    scheduleSave({ title: val, content, category })
+    scheduleSave({ title: val })
   }
 
   function handleContentChange(val: string) {
     setContent(val)
-    scheduleSave({ title, content: val, category })
+    scheduleSave({ content: val })
   }
 
   function handleCategoryChange(cat: CategoryId) {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    const pendingPatch = { ...pendingPatchRef.current, category: cat }
+    pendingPatchRef.current = {}
+
     setCategory(cat)
     setDropdownOpen(false)
-    patchNote(id, { title, content, category: cat })
+    patchNote(id, pendingPatch)
       .then((updated) => setLastUpdated(updated.updatedAt))
       .catch(() => {})
   }
 
   if (!note) return null
 
-  const activeCat = getCategoryById(category)
+  const activeCat = getDisplayCategory(category)
   const cardBg = hexToRgba(activeCat.color, 0.5)
 
   return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CATEGORIES, CategoryId, getCategoryById } from '@/lib/types'
+import { CATEGORIES, CategoryId, getDisplayCategory } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { getNotes, createNote, getAccessToken } from '@/lib/api'
 import type { Note } from '@/lib/types'
@@ -98,7 +98,7 @@ export default function DashboardPage() {
           ) : (
             <div className="flex flex-wrap gap-x-[13px] gap-y-4 content-start">
               {filtered.map((note) => {
-                const cat = getCategoryById(note.category)
+                const cat = getDisplayCategory(note.category)
                 return (
                   <button
                     key={note.id}
