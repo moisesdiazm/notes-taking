@@ -58,7 +58,7 @@ export async function register(
   })
   if (!res.ok) {
     const err = await res.json()
-    const msg = (err.email?.[0] as string | undefined) ?? (err.non_field_errors?.[0] as string | undefined) ?? 'Registration failed'
+    const msg = (err.email?.[0] as string | undefined) ?? (err.password?.[0] as string | undefined) ?? (err.non_field_errors?.[0] as string | undefined) ?? 'Registration failed'
     throw new Error(msg)
   }
   return res.json()
