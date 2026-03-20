@@ -30,7 +30,7 @@
 | Mar 19 (early AM) | 03:54–04:24 | ~30m | Django DRF backend (notes, categories, auth), API client in frontend, Docker + Postgres, tests, bug fixes |
 | Mar 19 (evening) | 22:17–22:44 | ~26m | Frontend unit + Playwright e2e testing setup, README update |
 
-  **Total dev time: ~2h 50m**
+  **Total dev time for first working version: ~2h 50m**
 
 
 10. Designed and refined a deployment strategy using Claude. Asked for changes based on my personal experience specially around SSL termination, ECS usage optimization and database management.
